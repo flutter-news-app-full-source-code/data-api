@@ -1,24 +1,24 @@
-name: ht_data_api
-description: A generic Dart package providing an implementation of HtDataClient for interacting with data resource endpoints via ht_http_client.
-repository: https://github.com/headlines-toolkit/ht-data-api
+name: data_api
+description: A generic Dart package providing an implementation of DataClient for interacting with data resource endpoints via http_client.
+repository: https://github.com/flutter-news-app-full-source-code/data-api
 publish_to: none
 
 environment:
   sdk: ^3.8.0
 
 dependencies:
-  ht_data_client:
+  data_client:
     git:
-      url: https://github.com/headlines-toolkit/ht-data-client.git
-  ht_http_client:
+      url: https://github.com/flutter-news-app-full-source-code/data-client.git
+  http_client:
     git:
-      url: https://github.com/headlines-toolkit/ht-http-client.git
-  ht_shared:
+      url: https://github.com/flutter-news-app-full-source-code/http-client.git
+  core:
     git:
-      url: https://github.com/headlines-toolkit/ht-shared.git
+      url: https://github.com/flutter-news-app-full-source-code/core.git
   logging: ^1.3.0
 
 dev_dependencies:
   mocktail: ^1.0.4
   test: ^1.24.0
-  very_good_analysis: ^7.0.0
+  very_good_analysis: ^9.0.0

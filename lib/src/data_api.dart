@@ -1,25 +1,25 @@
 import 'dart:convert';
-import 'package:ht_data_client/ht_data_client.dart';
-import 'package:ht_http_client/ht_http_client.dart';
-import 'package:ht_shared/ht_shared.dart';
+import 'package:data_client/data_client.dart';
+import 'package:http_client/http_client.dart';
+import 'package:core/core.dart';
 import 'package:logging/logging.dart'; // Import the logging package
 
-/// {@template ht_data_api}
-/// An implementation of [HtDataClient] that uses an [HtHttpClient] for
+/// {@template data_api}
+/// An implementation of [DataClient] that uses an [HttpClient] for
 /// communication with a data resource endpoint.
 ///
 /// This class provides concrete implementations for the data access methods
-/// defined in [HtDataClient], handling the underlying HTTP requests and
+/// defined in [DataClient], handling the underlying HTTP requests and
 /// managing serialization/deserialization via provided [FromJson] and [ToJson]
 /// functions.
 ///
 /// It requires the model name (e.g., 'headline', 'category') to target the
 /// correct resource via the unified API endpoint.
 /// {@endtemplate}
-class HtDataApi<T> implements HtDataClient<T> {
-  /// {@macro ht_data_api}
-  const HtDataApi({
-    required HtHttpClient httpClient,
+class DataApi<T> implements DataClient<T> {
+  /// {@macro data_api}
+  const DataApi({
+    required HttpClient httpClient,
     required String modelName,
     required FromJson<T> fromJson,
     required ToJson<T> toJson,
@@ -33,7 +33,7 @@ class HtDataApi<T> implements HtDataClient<T> {
   /// The base path for the unified data API endpoint.
   static const String _basePath = '/api/v1/data';
 
-  final HtHttpClient _httpClient;
+  final HttpClient _httpClient;
   final String _modelName;
   final FromJson<T> _fromJson;
   final ToJson<T> _toJson;
@@ -59,7 +59,7 @@ class HtDataApi<T> implements HtDataClient<T> {
   /// Returns a [SuccessApiResponse] containing the created item, potentially
   /// populated with server-assigned data (like an ID).
   ///
-  /// Throws [HtHttpException] or its subtypes on underlying HTTP communication
+  /// Throws [HttpException] or its subtypes on underlying HTTP communication
   /// failure. Exceptions during serialization ([_toJson]) or deserialization
   /// ([_fromJson]) will also propagate. These exceptions are intended to be
   /// handled by the caller (e.g., Repository or BLoC layer).
@@ -104,7 +104,7 @@ class HtDataApi<T> implements HtDataClient<T> {
   ///
   /// Returns a [SuccessApiResponse] containing the deserialized item.
   ///
-  /// Throws [HtHttpException] or its subtypes (e.g., [NotFoundException]) on
+  /// Throws [HttpException] or its subtypes (e.g., [NotFoundException]) on
   /// underlying HTTP communication failure. Exceptions during deserialization
   /// ([_fromJson]) will also propagate. These exceptions are intended to be
   /// handled by the caller.
@@ -154,7 +154,7 @@ class HtDataApi<T> implements HtDataClient<T> {
   /// Returns a [SuccessApiResponse] containing a [PaginatedResponse] with the
   /// list of deserialized items and pagination details.
   ///
-  /// Throws [HtHttpException] or its subtypes on underlying HTTP communication
+  /// Throws [HttpException] or its subtypes on underlying HTTP communication
   /// failure.
   @override
   Future<SuccessApiResponse<PaginatedResponse<T>>> readAll({
@@ -219,7 +219,7 @@ class HtDataApi<T> implements HtDataClient<T> {
   /// Returns a [SuccessApiResponse] containing the updated item as confirmed
   /// by the server.
   ///
-  /// Throws [HtHttpException] or its subtypes (e.g., [NotFoundException]) on
+  /// Throws [HttpException] or its subtypes (e.g., [NotFoundException]) on
   /// underlying HTTP communication failure. Exceptions during serialization
   /// ([_toJson]) or deserialization ([_fromJson]) will also propagate. These
   /// exceptions are intended to be handled by the caller.
@@ -266,7 +266,7 @@ class HtDataApi<T> implements HtDataClient<T> {
   /// Example Request (user-scoped): `DELETE /api/v1/data/some-item-id?model=source&userId=user123`
   /// Example Request (global): `DELETE /api/v1/data/some-item-id?model=source`
   ///
-  /// Throws [HtHttpException] or its subtypes (e.g., [NotFoundException]) on
+  /// Throws [HttpException] or its subtypes (e.g., [NotFoundException]) on
   /// underlying HTTP communication failure. These exceptions are intended to be
   /// handled by the caller.
   @override

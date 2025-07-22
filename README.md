@@ -1,10 +1,10 @@
-# ht_data_api
+# data_api
 
 ![coverage: 100%](https://img.shields.io/badge/coverage-100-green)
 [![style: very good analysis](https://img.shields.io/badge/style-very_good_analysis-B22C89.svg)](https://pub.dev/packages/very_good_analysis)
 [![License: PolyForm Free Trial](https://img.shields.io/badge/License-PolyForm%20Free%20Trial-blue)](https://polyformproject.org/licenses/free-trial/1.0.0)
 
-A generic Dart package providing a concrete implementation of the `HtDataClient<T>` abstract class for interacting with data resource endpoints via HTTP. It leverages the `ht_http_client` package for underlying HTTP communication and error handling.
+A generic Dart package providing a concrete implementation of the `DataClient<T>` abstract class for interacting with data resource endpoints via HTTP. It leverages the `http_client` package for underlying HTTP communication and error handling.
 
 ## Getting Started
 
@@ -12,13 +12,13 @@ Add this package to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  ht_data_api:
+  data_api:
     git:
-      url: https://github.com/headlines-toolkit/ht-data-api.git
+      url: https://github.com/flutter-news-app-full-source-code/data-api.git
       # ref: <specific_tag_or_commit> # Optional: Pin to a specific version
-  ht_http_client:
+  http_client:
     git:
-      url: https://github.com/headlines-toolkit/ht-http-client.git
+      url: https://github.com/flutter-news-app-full-source-code/http-client.git
       # ref: <specific_tag_or_commit>
 ```
 
@@ -26,14 +26,14 @@ Then run `dart pub get` or `flutter pub get`.
 
 ## Features
 
-*   Provides a concrete implementation of the `HtDataClient<T>` abstract class.
+*   Provides a concrete implementation of the `DataClient<T>` abstract class.
 *   Implements data access methods (`create`, `read`, `update`) returning `Future<SuccessApiResponse<T>>`.
 *   Implements a unified `readAll` method returning `Future<SuccessApiResponse<PaginatedResponse<T>>>`.
 *   Implements `delete` returning `Future<void>`.
-*   Requires an instance of `HtHttpClient` for making HTTP requests.
+*   Requires an instance of `HttpClient` for making HTTP requests.
 *   Configurable with the `modelName` (identifying the resource) and `fromJson`/`toJson` functions for the specific model `T`.
 *   Supports rich, document-style querying (`filter`), multi-field sorting (`sort`), and cursor-based pagination (`pagination`).
-*   Propagates `HtHttpException` errors from the underlying `HtHttpClient`.
+*   Propagates `HttpException` errors from the underlying `HttpClient`.
 *   Serializes complex query objects (`filter`, `sort`) into URL parameters for transport.
 *   Includes comprehensive unit tests with 100% coverage.
 
@@ -66,22 +66,22 @@ Then run `dart pub get` or `flutter pub get`.
     }
     ```
 
-2.  **Instantiate `HtHttpClient`:** Set up your HTTP client (refer to `ht_http_client` documentation).
+2.  **Instantiate `HttpClient`:** Set up your HTTP client (refer to `http_client` documentation).
 
     ```dart
     // Example setup (replace with your actual implementation)
     Future<String?> _myTokenProvider() async => 'your_auth_token';
 
-    final httpClient = HtHttpClient(
+    final httpClient = HttpClient(
       baseUrl: 'https://api.yourapp.com/v1',
       tokenProvider: _myTokenProvider,
     );
     ```
 
-3.  **Instantiate `HtDataApi`:** Create an instance specific to your model, providing the `modelName` used in the unified API endpoint.
+3.  **Instantiate `DataApi`:** Create an instance specific to your model, providing the `modelName` used in the unified API endpoint.
 
     ```dart
-    final myModelApi = HtDataApi<MyModel>(
+    final myModelApi = DataApi<MyModel>(
       httpClient: httpClient,
       modelName: 'my-models', // The name identifying this resource in the API
       fromJson: MyModel.fromJson, // Reference to your fromJson factory/function
@@ -154,8 +154,8 @@ Then run `dart pub get` or `flutter pub get`.
         // await myModelApi.delete(id: firstModelId, userId: userId);
         // print('Deleted model with ID (User $userId): $firstModelId');
       }
-    } on HtHttpException catch (e) {
-      // Handle specific HTTP errors from ht_http_client
+    } on HttpException catch (e) {
+      // Handle specific HTTP errors from http_client
       print('API Error: $e');
       if (e is NotFoundException) {
         // Handle 404 specifically
@@ -167,6 +167,8 @@ Then run `dart pub get` or `flutter pub get`.
     }
     ```
 
-## License
+## 🔑 Licensing
 
-This package is licensed under the [PolyForm Free Trial 1.0.0](LICENSE). Please review the terms before use.
+This package is source-available and licensed under the [PolyForm Free Trial 1.0.0](LICENSE). Please review the terms before use.
+
+For commercial licensing options that grant the right to build and distribute unlimited applications, please visit the main [**Flutter News App - Full Source Code Toolkit**](https://github.com/flutter-news-app-full-source-code) organization.
