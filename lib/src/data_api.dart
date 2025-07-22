@@ -1,7 +1,8 @@
 import 'dart:convert';
+
+import 'package:core/core.dart';
 import 'package:data_client/data_client.dart';
 import 'package:http_client/http_client.dart';
-import 'package:core/core.dart';
 import 'package:logging/logging.dart'; // Import the logging package
 
 /// {@template data_api}

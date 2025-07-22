@@ -1,9 +1,8 @@
 //
 // ignore_for_file: inference_failure_on_collection_literal, inference_failure_on_function_invocation, lines_longer_than_80_chars, prefer_constructors_over_static_methods, avoid_equals_and_hash_code_on_mutable_classes
 
-import 'package:data_api/data_api.dart';
-import 'package:http_client/http_client.dart';
 import 'package:core/core.dart';
+import 'package:http_client/http_client.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
