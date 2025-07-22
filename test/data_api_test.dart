@@ -2,7 +2,9 @@
 // ignore_for_file: inference_failure_on_collection_literal, inference_failure_on_function_invocation, lines_longer_than_80_chars, prefer_constructors_over_static_methods, avoid_equals_and_hash_code_on_mutable_classes
 
 import 'package:core/core.dart';
+import 'package:data_api/data_api.dart';
 import 'package:http_client/http_client.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
@@ -17,7 +19,13 @@ const testUserId = 'user-456'; // Added test user ID
 
 // --- Helper to create a standard success envelope ---
 Map<String, dynamic> _createSuccessEnvelope(dynamic data) {
-  return {'data': data, 'metadata': null};
+  return {
+    'data': data,
+    'metadata': {
+      'requestId': 'test-request-id',
+      'timestamp': DateTime.now().toIso8601String(),
+    },
+  };
 }
 
 // --- Helper to create a standard paginated response map ---
@@ -85,9 +93,9 @@ void main() {
   group('DataApi', () {
     late HttpClient mockHttpClient;
     late MockLogger mockLogger; // Declare mockLogger
-    late DataApi<_TestModel> DataApi;
-    late DataApi<_TestModel> DataApiFromJsonThrows;
-    late DataApi<_TestModel> DataApiToJsonThrows;
+    late DataApi<_TestModel> dataApi;
+    late DataApi<_TestModel> dataApiFromJsonThrows;
+    late DataApi<_TestModel> dataApiToJsonThrows;
 
     const testModelName = 'test-model'; // Added model name for tests
     const testBasePath = '/api/v1/data'; // Unified base path
@@ -114,21 +122,21 @@ void main() {
     setUp(() {
       mockHttpClient = MockHttpClient();
       mockLogger = MockLogger(); // Initialize mockLogger
-      DataApi = DataApi<_TestModel>(
+      dataApi = DataApi<_TestModel>(
         httpClient: mockHttpClient,
         modelName: testModelName,
         fromJson: _TestModel.fromJson,
         toJson: _TestModel.toJson,
         logger: mockLogger, // Pass mockLogger
       );
-      DataApiFromJsonThrows = DataApi<_TestModel>(
+      dataApiFromJsonThrows = DataApi<_TestModel>(
         httpClient: mockHttpClient,
         modelName: testModelName,
         fromJson: _mockFromJsonThrows,
         toJson: _TestModel.toJson,
         logger: mockLogger, // Pass mockLogger
       );
-      DataApiToJsonThrows = DataApi<_TestModel>(
+      dataApiToJsonThrows = DataApi<_TestModel>(
         httpClient: mockHttpClient,
         modelName: testModelName,
         fromJson: _TestModel.fromJson,
@@ -169,7 +177,7 @@ void main() {
         'should call httpClient.post and return deserialized model on success',
         () async {
           stubPostSuccess();
-          final result = await DataApi.create(item: testModel);
+          final result = await dataApi.create(item: testModel);
           expect(result, isA<SuccessApiResponse<_TestModel>>());
           expect(result.data, equals(testModel));
           verify(
@@ -186,7 +194,7 @@ void main() {
         'should call httpClient.post with userId and return deserialized model on success',
         () async {
           stubPostSuccess(queryParameters: testUserScopedQueryParams);
-          final result = await DataApi.create(
+          final result = await dataApi.create(
             item: testModel,
             userId: testUserId,
           );
@@ -206,7 +214,7 @@ void main() {
         const exception = BadRequestException('Invalid data');
         stubPostFailure(exception);
         expect(
-          () => DataApi.create(item: testModel),
+          () => dataApi.create(item: testModel),
           throwsA(isA<BadRequestException>()),
         );
         verify(
@@ -227,7 +235,7 @@ void main() {
             queryParameters: testUserScopedQueryParams,
           );
           expect(
-            () => DataApi.create(item: testModel, userId: testUserId),
+            () => dataApi.create(item: testModel, userId: testUserId),
             throwsA(isA<BadRequestException>()),
           );
           verify(
@@ -243,7 +251,7 @@ void main() {
       test('should throw generic Exception when toJson fails', () async {
         // No stubbing needed as http client is not called
         expect(
-          () => DataApiToJsonThrows.create(item: testModel),
+          () => dataApiToJsonThrows.create(item: testModel),
           throwsA(
             isA<Exception>().having(
               (e) => e.toString(),
@@ -268,7 +276,7 @@ void main() {
           final exception = genericException;
           stubPostFailure(exception);
           expect(
-            () => DataApi.create(item: testModel),
+            () => dataApi.create(item: testModel),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -324,7 +332,7 @@ void main() {
         'should call httpClient.get and return deserialized model on success',
         () async {
           stubGetSuccess();
-          final result = await DataApi.read(id: testId);
+          final result = await dataApi.read(id: testId);
           expect(result, isA<SuccessApiResponse<_TestModel>>());
           expect(result.data, equals(testModel));
           verify(
@@ -340,7 +348,7 @@ void main() {
         'should call httpClient.get with userId and return deserialized model on success',
         () async {
           stubGetSuccess(queryParameters: userScopedQueryParams);
-          final result = await DataApi.read(id: testId, userId: testUserId);
+          final result = await dataApi.read(id: testId, userId: testUserId);
           expect(result, isA<SuccessApiResponse<_TestModel>>());
           expect(result.data, equals(testModel));
           verify(
@@ -356,7 +364,7 @@ void main() {
         const exception = NotFoundException('Item not found');
         stubGetFailure(exception);
         expect(
-          () => DataApi.read(id: testId),
+          () => dataApi.read(id: testId),
           throwsA(isA<NotFoundException>()),
         );
         verify(
@@ -373,7 +381,7 @@ void main() {
           const exception = NotFoundException('Item not found');
           stubGetFailure(exception, queryParameters: userScopedQueryParams);
           expect(
-            () => DataApi.read(id: testId, userId: testUserId),
+            () => dataApi.read(id: testId, userId: testUserId),
             throwsA(isA<NotFoundException>()),
           );
           verify(
@@ -389,14 +397,8 @@ void main() {
         // Stub needs to return the envelope, even if fromJson will fail
         stubGetSuccess();
         expect(
-          () => DataApiFromJsonThrows.read(id: testId),
-          throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
-              'message',
-              'Exception: fromJson failed',
-            ),
-          ),
+          () => dataApiFromJsonThrows.read(id: testId),
+          throwsA(isA<CheckedFromJsonException>()),
         );
         verify(
           () => mockHttpClient.get<Map<String, dynamic>>(
@@ -413,7 +415,7 @@ void main() {
           final exception = genericException;
           stubGetFailure(exception);
           expect(
-            () => DataApi.read(id: testId),
+            () => dataApi.read(id: testId),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -480,7 +482,7 @@ void main() {
           items: testModelListJson,
           queryParameters: baseQueryParams, // Use base query
         );
-        final result = await DataApi.readAll();
+        final result = await dataApi.readAll();
         expect(
           result,
           isA<SuccessApiResponse<PaginatedResponse<_TestModel>>>(),
@@ -501,7 +503,7 @@ void main() {
           items: testModelListJson,
           queryParameters: userScopedQueryParams, // Use user-scoped query
         );
-        final result = await DataApi.readAll(userId: testUserId);
+        final result = await dataApi.readAll(userId: testUserId);
         expect(
           result,
           isA<SuccessApiResponse<PaginatedResponse<_TestModel>>>(),
@@ -539,7 +541,7 @@ void main() {
             queryParameters: queryParams,
             hasMore: true,
           );
-          final result = await DataApi.readAll(
+          final result = await dataApi.readAll(
             pagination: paginationOptions,
             sort: sortOptions,
           );
@@ -571,7 +573,7 @@ void main() {
             queryParameters: queryParams,
           );
 
-          final result = await DataApi.readAll(filter: filter);
+          final result = await dataApi.readAll(filter: filter);
 
           expect(
             result,
@@ -609,7 +611,7 @@ void main() {
             queryParameters: queryParams,
             hasMore: true,
           );
-          final result = await DataApi.readAll(
+          final result = await dataApi.readAll(
             userId: testUserId,
             pagination: paginationOptions,
             sort: sortOptions,
@@ -635,7 +637,7 @@ void main() {
           exception: exception,
           queryParameters: baseQueryParams,
         );
-        expect(() => DataApi.readAll(), throwsA(isA<ServerException>()));
+        expect(() => dataApi.readAll(), throwsA(isA<ServerException>()));
         verify(
           () => mockHttpClient.get<Map<String, dynamic>>(
             testBasePath, // Verify base path
@@ -653,7 +655,7 @@ void main() {
             queryParameters: userScopedQueryParams,
           );
           expect(
-            () => DataApi.readAll(userId: testUserId),
+            () => dataApi.readAll(userId: testUserId),
             throwsA(isA<ServerException>()),
           );
           verify(
@@ -684,7 +686,7 @@ void main() {
             ),
           ).thenAnswer((_) async => envelopeWithMalformedData);
 
-          expect(() => DataApi.readAll(), throwsA(isA<FormatException>()));
+          expect(() => dataApi.readAll(), throwsA(isA<CheckedFromJsonException>()));
           verify(
             () => mockHttpClient.get<Map<String, dynamic>>(
               testBasePath, // Verify base path
@@ -703,14 +705,8 @@ void main() {
             queryParameters: baseQueryParams, // Use base query
           );
           expect(
-            () => DataApiFromJsonThrows.readAll(),
-            throwsA(
-              isA<Exception>().having(
-                (e) => e.toString(),
-                'message',
-                'Exception: fromJson failed',
-              ),
-            ),
+            () => dataApiFromJsonThrows.readAll(),
+            throwsA(isA<CheckedFromJsonException>()),
           );
           verify(
             () => mockHttpClient.get<Map<String, dynamic>>(
@@ -730,7 +726,7 @@ void main() {
             queryParameters: baseQueryParams,
           );
           expect(
-            () => DataApi.readAll(),
+            () => dataApi.readAll(),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -777,7 +773,7 @@ void main() {
         'should call httpClient.put and return deserialized model on success',
         () async {
           stubPutSuccess();
-          final result = await DataApi.update(id: testId, item: updatedModel);
+          final result = await dataApi.update(id: testId, item: updatedModel);
           expect(result, isA<SuccessApiResponse<_TestModel>>());
           expect(result.data, equals(updatedModel));
           verify(
@@ -794,7 +790,7 @@ void main() {
         'should call httpClient.put with userId and return deserialized model on success',
         () async {
           stubPutSuccess(queryParameters: userScopedQueryParams);
-          final result = await DataApi.update(
+          final result = await dataApi.update(
             id: testId,
             item: updatedModel,
             userId: testUserId,
@@ -823,7 +819,7 @@ void main() {
         ).thenThrow(exception);
 
         expect(
-          () => DataApi.update(id: testId, item: testModel),
+          () => dataApi.update(id: testId, item: testModel),
           throwsA(isA<UnauthorizedException>()),
         );
         verify(
@@ -850,7 +846,7 @@ void main() {
 
           expect(
             () =>
-                DataApi.update(id: testId, item: testModel, userId: testUserId),
+                dataApi.update(id: testId, item: testModel, userId: testUserId),
             throwsA(isA<UnauthorizedException>()),
           );
           verify(
@@ -866,7 +862,7 @@ void main() {
       test('should throw generic Exception when toJson fails', () async {
         // No stubbing needed
         expect(
-          () => DataApiToJsonThrows.update(id: testId, item: testModel),
+          () => dataApiToJsonThrows.update(id: testId, item: testModel),
           throwsA(
             isA<Exception>().having(
               (e) => e.toString(),
@@ -899,7 +895,7 @@ void main() {
           ).thenThrow(exception);
 
           expect(
-            () => DataApi.update(id: testId, item: testModel),
+            () => dataApi.update(id: testId, item: testModel),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
@@ -954,7 +950,7 @@ void main() {
         'should call httpClient.delete and complete normally on success',
         () async {
           stubDeleteSuccess();
-          await DataApi.delete(id: testId);
+          await dataApi.delete(id: testId);
           verify(
             () => mockHttpClient.delete<dynamic>(
               path,
@@ -968,7 +964,7 @@ void main() {
         'should call httpClient.delete with userId and complete normally on success',
         () async {
           stubDeleteSuccess(queryParameters: userScopedQueryParams);
-          await DataApi.delete(id: testId, userId: testUserId);
+          await dataApi.delete(id: testId, userId: testUserId);
           verify(
             () => mockHttpClient.delete<dynamic>(
               path,
@@ -982,7 +978,7 @@ void main() {
         const exception = ForbiddenException('Permission denied');
         stubDeleteFailure(exception);
         expect(
-          () => DataApi.delete(id: testId),
+          () => dataApi.delete(id: testId),
           throwsA(isA<ForbiddenException>()),
         );
         verify(
@@ -999,7 +995,7 @@ void main() {
           const exception = ForbiddenException('Permission denied');
           stubDeleteFailure(exception, queryParameters: userScopedQueryParams);
           expect(
-            () => DataApi.delete(id: testId, userId: testUserId),
+            () => dataApi.delete(id: testId, userId: testUserId),
             throwsA(isA<ForbiddenException>()),
           );
           verify(
@@ -1017,7 +1013,7 @@ void main() {
           final exception = genericException;
           stubDeleteFailure(exception);
           expect(
-            () => DataApi.delete(id: testId),
+            () => dataApi.delete(id: testId),
             throwsA(
               isA<Exception>().having(
                 (e) => e.toString(),
