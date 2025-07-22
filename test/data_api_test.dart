@@ -686,7 +686,10 @@ void main() {
             ),
           ).thenAnswer((_) async => envelopeWithMalformedData);
 
-          expect(() => dataApi.readAll(), throwsA(isA<CheckedFromJsonException>()));
+          expect(
+            () => dataApi.readAll(),
+            throwsA(isA<CheckedFromJsonException>()),
+          );
           verify(
             () => mockHttpClient.get<Map<String, dynamic>>(
               testBasePath, // Verify base path
